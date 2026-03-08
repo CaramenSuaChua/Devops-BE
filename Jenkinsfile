@@ -22,7 +22,6 @@ pipeline {
         }
 
         stage('Build & Push Backend Image') {
-            when { branch 'main' }
             steps {
                 script {
                     def repo = "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}"
