@@ -55,7 +55,7 @@ pipeline {
 
                             // LỆNH QUAN TRỌNG: Chỉ sửa tag trong khối 'backend:'
                             // Giả sử file values.yaml nằm ở thư mục gốc hoặc charts/values.yaml
-                            def valuesPath = "charts/values.yaml" // Thay đổi đường dẫn này nếu cần
+                            def valuesPath = "ecommerce-chart/values.yaml" // Thay đổi đường dẫn này nếu cần
                             
                             sh """
                                 sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
