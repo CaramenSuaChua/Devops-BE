@@ -7,7 +7,8 @@ COPY . .
 RUN mvn install -DskipTests=true
 
 ## run stage ##
-FROM openjdk:17-alpine
+# FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 RUN unlink /etc/localtime;ln -s  /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
 COPY --from=build src/target/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar /run/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar
