@@ -6,7 +6,7 @@ COPY . .
 
 RUN mvn install -DskipTests=true
 
-## run stage ##
+## run stage ##     --spring.config.location=/run/src/main/resources/application.properties
 # FROM openjdk:17-alpine
 FROM eclipse-temurin:17-jre-alpine
 
@@ -14,4 +14,4 @@ RUN unlink /etc/localtime;ln -s  /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/local
 COPY --from=build src/target/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar /run/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar
 
 EXPOSE 8080                                                                                                                                      
-ENTRYPOINT java -jar /run/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar --spring.config.location=/run/src/main/resources/application.properties
+ENTRYPOINT java -jar /run/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar
