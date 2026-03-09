@@ -55,4 +55,4 @@ EXPOSE 8080
 
 # Chạy ứng dụng Java
 # Tham số --spring.config.location cho phép bạn ghi đè cấu hình từ file bên ngoài nếu cần
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=optional:classpath:/,optional:file:/run/config/application.properties"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=optional:classpath:/,optional:file:/run/src/main/resources/application.properties"]
