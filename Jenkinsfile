@@ -22,7 +22,6 @@ pipeline {
         }
 
         stage('Build & Push Backend Image') {
-            when { branch 'main' }
             steps {
                 script {
                     def repo = "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}"
@@ -43,34 +42,33 @@ pipeline {
             }
         }
 
-        // stage('Update GitOps (Backend Tag)') {
-        //     when { branch 'main' }
-        //     steps {
-        //         script {
-        //             sh "rm -rf ecommerce-gitops"
-        //             withCredentials([usernamePassword(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
-        //                 sh "git clone https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO}"
+        stage('Update GitOps (Backend Tag)') {
+            steps {
+                script {
+                    sh "rm -rf ecommerce-gitops"
+                    withCredentials([usernamePassword(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
+                        sh "git clone https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO}"
                         
-        //                 dir('ecommerce-gitops') {
-        //                     sh "git config user.email 'ngodungvb0304@gmail.com'"
-        //                     sh "git config user.name 'CaramenSuaChua'"
+                        dir('ecommerce-gitops') {
+                            sh "git config user.email 'ngodungvb0304@gmail.com'"
+                            sh "git config user.name 'CaramenSuaChua'"
 
-        //                     // LỆNH QUAN TRỌNG: Chỉ sửa tag trong khối 'backend:'
-        //                     // Giả sử file values.yaml nằm ở thư mục gốc hoặc charts/values.yaml
-        //                     def valuesPath = "charts/values.yaml" // Thay đổi đường dẫn này nếu cần
+                            // LỆNH QUAN TRỌNG: Chỉ sửa tag trong khối 'backend:'
+                            // Giả sử file values.yaml nằm ở thư mục gốc hoặc charts/values.yaml
+                            def valuesPath = "ecommerce-chart/values.yaml" // Thay đổi đường dẫn này nếu cần
                             
-        //                     sh """
-        //                         sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
-        //                     """
+                            sh """
+                                sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
+                            """
 
-        //                     sh "git add ${valuesPath}"
-        //                     sh "git commit -m 'Update backend image to ${env.IMAGE_TAG} [skip ci]' || echo 'No changes'"
-        //                     sh "git push https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO} HEAD:main"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                            sh "git add ${valuesPath}"
+                            sh "git commit -m 'Update backend image to ${env.IMAGE_TAG} [skip ci]' || echo 'No changes'"
+                            sh "git push https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO} HEAD:main"
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post {
