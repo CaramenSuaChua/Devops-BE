@@ -25,24 +25,21 @@ pipeline {
         stage('Code Quality (SonarQube)') {
             steps {
                 script {
-                    // 1. Khai báo tool scanner đã cấu hình ở Bước 1
-                    def scannerHome = tool 'sonar-scanner'
+                    // 1. Phải lấy tool scanner đã cài trong Global Tool Configuration
+                    // Nếu bạn đặt tên tool là 'sonar-scanner' thì điền đúng vào đây
+                    def scannerHome = tool 'sonar-scanner' 
                     
-                    // 2. Gọi chính xác tên server 'SonarQube' trong Jenkins System
+                    // 2. Điền TRỰC TIẾP tên 'SonarQube' vào đây (khớp với ảnh bạn gửi)
                     withSonarQubeEnv('SonarQube') {
-                        // 3. Phải có lệnh chạy bên trong khối này
-                        sh "${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=${env.IMAGE_NAME} \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=${SONAR_HOST_URL} \
-                            -Dsonar.login=${SONAR_AUTH_TOKEN}"
+                        // 3. Phải có lệnh chạy bên trong khối này thì Jenkins mới kích hoạt Token
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=${env.IMAGE_NAME} -Dsonar.sources=."
                     }
                     
-                    // 4. Chốt chặn Quality Gate
+                    // 4. Chờ kết quả Quality Gate từ Webhook
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Pipeline dừng do không vượt qua kiểm tra chất lượng code: ${qg.status}"
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
                         }
                     }
                 }
