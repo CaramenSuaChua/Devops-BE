@@ -25,23 +25,22 @@ pipeline {
         stage('Code Quality (SonarQube)') {
             steps {
                 script {
-                    // Lấy tool đã cấu hình (khớp tên 'sonar-scanner' trong ảnh d494ef.png)
+                    // Bước này để Jenkins tự động tải và sử dụng tool sonar-scanner
                     def scannerHome = tool 'sonar-scanner'
                     
-                    // Gọi cấu hình 'SonarQube' (khớp tên trong ảnh d50fdc.png)
+                    // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
                     withSonarQubeEnv('SonarQube') {
-                        // Lệnh thực hiện scan code thực tế
+                        // PHẢI CÓ LỆNH SH Ở ĐÂY
                         sh "${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=${env.IMAGE_NAME} \
+                            -Dsonar.projectKey=ecommerce-backend \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://18.139.185.108:9000"
                     }
                     
-                    // Đợi tín hiệu phản hồi từ SonarQube Webhook
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Code Quality không đạt (Status: ${qg.status}). Pipeline dừng lại!"
+                            error "Pipeline fail do Quality Gate của SonarQube báo lỗi: ${qg.status}"
                         }
                     }
                 }
