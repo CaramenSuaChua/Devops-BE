@@ -21,6 +21,28 @@ pipeline {
             }
         }
 
+        stage('Code Quality (SonarQube)') {
+            steps {
+                script {
+                    // Chạy phân tích code
+                    withSonarQubeEnv("${env.SONAR_SERVER_NAME}") {
+                        // Nếu là dự án Maven: sh "mvn sonar:sonar"
+                        // Nếu là dự án NodeJS/Python dùng sonar-scanner:
+                        sh "sonar-scanner -Dsonar.projectKey=${env.IMAGE_NAME} -Dsonar.sources=."
+                    }
+                    
+                    // Bước quan trọng nhất: Đợi kết quả từ Quality Gate
+                    // Pipeline sẽ DỪNG tại đây nếu SonarQube trả về trạng thái ERROR/FAIL
+                    timeout(time: 10, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Build & Push Backend Image') {
             steps {
                 script {
