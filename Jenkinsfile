@@ -7,6 +7,7 @@ pipeline {
         DOCKER_HUB_CREDS = "docker-hub-creds" // ID credentials Docker Hub trong Jenkins
         GITOPS_CREDS = "github-token"      // ID credentials GitHub PAT trong Jenkins
         GITOPS_REPO = "github.com/CaramenSuaChua/ecommerce-gitops.git"
+        SONAR_SERVER_NAME = "SonarQube"
     }
 
     stages {
@@ -24,15 +25,13 @@ pipeline {
         stage('Code Quality (SonarQube)') {
             steps {
                 script {
-                    // Chạy phân tích code
-                    withSonarQubeEnv("SonarQube") {
-                        // Nếu là dự án Maven: sh "mvn sonar:sonar"
-                        // Nếu là dự án NodeJS/Python dùng sonar-scanner:
+                    // Đảm bảo tên 'SonarQube' khớp chính xác với ảnh image_d50fdc.png
+                    withSonarQubeEnv('SonarQube') {
+                        // Đây là lệnh thực hiện scan - THIẾU LỆNH NÀY SONAR SẼ KHÔNG CHẠY
                         sh "sonar-scanner -Dsonar.projectKey=${env.IMAGE_NAME} -Dsonar.sources=."
                     }
                     
-                    // Bước quan trọng nhất: Đợi kết quả từ Quality Gate
-                    // Pipeline sẽ DỪNG tại đây nếu SonarQube trả về trạng thái ERROR/FAIL
+                    // Đợi tín hiệu từ Webhook (Bước này sẽ fail nếu Quality Gate không đạt)
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
