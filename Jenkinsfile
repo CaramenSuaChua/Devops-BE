@@ -30,11 +30,11 @@ pipeline {
                     
                     // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
                     withSonarQubeEnv('SonarQube') {
-                        // PHẢI CÓ LỆNH SH Ở ĐÂY
                         sh "${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=ecommerce-backend \
                             -Dsonar.sources=. \
-                            -Dsonar.host.url=http://18.139.185.108:9000"
+                            -Dsonar.host.url=http://18.139.185.108:9000 \
+                            -Dsonar.java.binaries=." 
                     }
                     
                     timeout(time: 10, unit: 'MINUTES') {
