@@ -25,24 +25,23 @@ pipeline {
         stage('Code Quality (SonarQube)') {
             steps {
                 script {
-                    // 1. Khai báo tool scanner (khớp với tên 'sonar-scanner' trong ảnh d494ef.png)
+                    // Lấy tool đã cấu hình (khớp tên 'sonar-scanner' trong ảnh d494ef.png)
                     def scannerHome = tool 'sonar-scanner'
                     
-                    // 2. Truyền chính xác tên 'SonarQube' (khớp với ảnh d50fdc.png)
-                    // Lưu ý: Phải bọc trong dấu nháy đơn ''
+                    // Gọi cấu hình 'SonarQube' (khớp tên trong ảnh d50fdc.png)
                     withSonarQubeEnv('SonarQube') {
-                        // 3. Thực hiện lệnh quét (Phải nằm TRONG khối withSonarQubeEnv)
+                        // Lệnh thực hiện scan code thực tế
                         sh "${scannerHome}/bin/sonar-scanner \
                             -Dsonar.projectKey=${env.IMAGE_NAME} \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://18.139.185.108:9000"
                     }
                     
-                    // 4. Chốt chặn Quality Gate (Yêu cầu đã cấu hình Webhook trên SonarQube)
+                    // Đợi tín hiệu phản hồi từ SonarQube Webhook
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Pipeline dừng do code không đạt chất lượng: ${qg.status}"
+                            error "Code Quality không đạt (Status: ${qg.status}). Pipeline dừng lại!"
                         }
                     }
                 }
