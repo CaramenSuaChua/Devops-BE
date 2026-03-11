@@ -7,6 +7,7 @@ pipeline {
         DOCKER_HUB_CREDS = "docker-hub-creds" // ID credentials Docker Hub trong Jenkins
         GITOPS_CREDS = "github-token"      // ID credentials GitHub PAT trong Jenkins
         GITOPS_REPO = "github.com/CaramenSuaChua/ecommerce-gitops.git"
+        SONAR_SERVER_NAME = "SonarQube"
     }
 
     stages {
@@ -24,19 +25,22 @@ pipeline {
         stage('Code Quality (SonarQube)') {
             steps {
                 script {
-                    // Chạy phân tích code
-                    withSonarQubeEnv("${env.SONAR_SERVER_NAME}") {
-                        // Nếu là dự án Maven: sh "mvn sonar:sonar"
-                        // Nếu là dự án NodeJS/Python dùng sonar-scanner:
-                        sh "sonar-scanner -Dsonar.projectKey=${env.IMAGE_NAME} -Dsonar.sources=."
+                    // Bước này để Jenkins tự động tải và sử dụng tool sonar-scanner
+                    def scannerHome = tool 'sonar-scanner'
+                    
+                    // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
+                    withSonarQubeEnv('SonarQube') {
+                        // PHẢI CÓ LỆNH SH Ở ĐÂY
+                        sh "${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=ecommerce-backend \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://18.139.185.108:9000"
                     }
                     
-                    // Bước quan trọng nhất: Đợi kết quả từ Quality Gate
-                    // Pipeline sẽ DỪNG tại đây nếu SonarQube trả về trạng thái ERROR/FAIL
                     timeout(time: 10, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                            error "Pipeline fail do Quality Gate của SonarQube báo lỗi: ${qg.status}"
                         }
                     }
                 }
