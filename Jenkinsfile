@@ -25,7 +25,7 @@ pipeline {
             steps {
                 script {
                     // Chạy phân tích code
-                    withSonarQubeEnv("${env.SONAR_SERVER_NAME}") {
+                    withSonarQubeEnv("SonarQube") {
                         // Nếu là dự án Maven: sh "mvn sonar:sonar"
                         // Nếu là dự án NodeJS/Python dùng sonar-scanner:
                         sh "sonar-scanner -Dsonar.projectKey=${env.IMAGE_NAME} -Dsonar.sources=."
