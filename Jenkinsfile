@@ -31,7 +31,7 @@ pipeline {
                     // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
                     withSonarQubeEnv('SonarQube') {
                         sh "${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=ecommerce-backend \
+                            -Dsonar.projectKey=Ecommerce-Backend \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=http://18.139.185.108:9000 \
                             -Dsonar.java.binaries=." 
