@@ -52,7 +52,7 @@ pipeline {
 
         stage('Build & Push Backend Image') {
             when {
-                expression { env.action == 'closed' && env.merged == 'true' }
+                expression { env.action == 'closed'}
             }
             steps {
                 script {
@@ -76,7 +76,7 @@ pipeline {
 
         stage('Update GitOps (Backend Tag)') {
             when {
-                expression { env.action == 'closed' && env.merged == 'true' }
+                expression { env.action == 'closed'}
             }
             steps {
                 script {
