@@ -23,6 +23,9 @@ pipeline {
         }
 
         stage('Code Quality (SonarQube)') {
+            when {
+                expression { env.action == 'opened' || env.action == 'synchronize' }
+            }
             steps {
                 script {
                     // Bước này để Jenkins tự động tải và sử dụng tool sonar-scanner
@@ -48,6 +51,9 @@ pipeline {
         }
 
         stage('Build & Push Backend Image') {
+            when {
+                expression { env.action == 'closed' && env.merged == 'true' }
+            }
             steps {
                 script {
                     def repo = "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}"
@@ -69,6 +75,9 @@ pipeline {
         }
 
         stage('Update GitOps (Backend Tag)') {
+            when {
+                expression { env.action == 'closed' && env.merged == 'true' }
+            }
             steps {
                 script {
                     sh "rm -rf ecommerce-gitops"
