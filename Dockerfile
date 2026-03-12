@@ -16,6 +16,11 @@
 # EXPOSE 8080                                                                                                                                      
 # ENTRYPOINT java -jar /run/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar --spring.config.location=/run/src/main/resources/application.properties
 
+
+
+
+
+
 ## STAGE 1: Build stage ##
 FROM maven:3.8.3-openjdk-17-slim AS build
 
