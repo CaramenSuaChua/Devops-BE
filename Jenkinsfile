@@ -94,6 +94,7 @@ pipeline {
                 script {
                     def ecrRepo = "${env.ECR_REGISTRY}/${env.AWS_ECR_REPO_NAME}"
                     def ecrTag = "${ecrRepo}:${env.IMAGE_TAG}"
+                    def buildTimestamp = new Date().format("yyyyMMddHHmmss")
 
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
                         sh '''
@@ -105,7 +106,7 @@ pipeline {
                             aws ecr get-login-password --region ''' + AWS_REGION + ''' --profile jenkins | docker login --username AWS --password-stdin ''' + env.ECR_REGISTRY + '''
         
                             echo "--- Building Backend Image ---"
-                            docker build -t ''' + ecrTag + ''' .
+                            docker build --build-arg BUILD_DATE=''' + buildTimestamp + ''' -t ''' + ecrTag + ''' .
         
                             echo "--- Pushing Image to ECR ---"
                             docker push ''' + ecrTag + '''
