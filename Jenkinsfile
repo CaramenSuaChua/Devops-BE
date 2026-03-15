@@ -2,12 +2,20 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = "caramensuachua"
+        // DOCKER
         IMAGE_NAME = "ecommerce-backend"
+        DOCKER_REGISTRY = "caramensuachua"
         DOCKER_HUB_CREDS = "docker-hub-creds" // ID credentials Docker Hub trong Jenkins
+        // HELM
         GITOPS_CREDS = "github-token"      // ID credentials GitHub PAT trong Jenkins
         GITOPS_REPO = "github.com/CaramenSuaChua/ecommerce-gitops.git"
+        // SCANCODE
         SONAR_SERVER_NAME = "SonarQube"
+        // AWS_INFOR
+        AWS_ACCOUNT_ID = "aws-id" // ID Credential AWS trong Jenkins, chứa Account ID
+        AWS_CREDS_ID   = "aws-creds"   // ID credentials AWS trong Jenkins, chứa Access Key và Secret Key
+        AWS_REGION     = "ap-southeast-1"
+        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
 
     stages {
@@ -50,25 +58,55 @@ pipeline {
             }
         }
 
-        stage('Build & Push Backend Image') {
+        // stage('Build & Push Backend Image') {
+        //     when {
+        //         expression { env.action == 'closed'}
+        //     }
+        //     steps {
+        //         script {
+        //             def repo = "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}"
+        //             def targetTag = "${repo}:${env.IMAGE_TAG}"
+
+        //             withCredentials([usernamePassword(credentialsId: "${env.DOCKER_HUB_CREDS}", passwordVariable: 'DOCKER_PWD', usernameVariable: 'DOCKER_USER')]) {
+        //                 sh "echo \$DOCKER_PWD | docker login -u \$DOCKER_USER --password-stdin"
+                        
+        //                 echo "--- Building Backend Image ---"
+        //                 sh "docker build -t ${targetTag} ."
+
+        //                 echo "--- Pushing Backend Image ---"
+        //                 sh "docker push ${targetTag}"
+                        
+        //                 sh "docker logout"
+        //             }
+        //         }
+        //     }
+        // }
+
+        stage ("Build & Push to ECR") {
             when {
                 expression { env.action == 'closed'}
             }
             steps {
                 script {
-                    def repo = "${env.DOCKER_REGISTRY}/${env.IMAGE_NAME}"
-                    def targetTag = "${repo}:${env.IMAGE_TAG}"
+                    def ecrRepo = "${env.ECR_REGISTRY}/${env.IMAGE_NAME}"
+                    def ecrTag = "${ecrRepo}:${env.IMAGE_TAG}"
 
-                    withCredentials([usernamePassword(credentialsId: "${env.DOCKER_HUB_CREDS}", passwordVariable: 'DOCKER_PWD', usernameVariable: 'DOCKER_USER')]) {
-                        sh "echo \$DOCKER_PWD | docker login -u \$DOCKER_USER --password-stdin"
-                        
-                        echo "--- Building Backend Image ---"
-                        sh "docker build -t ${targetTag} ."
+                    withCredentials([usernamePassword(credentialsId: "${env.AWS_CREDS_ID}", passwordVariable: 'AWS_SECRET_KEY', usernameVariable: 'AWS_ACCESS_KEY')]) {
+                        sh "aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile jenkins"
+                        sh "aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile jenkins"
+                        sh "aws configure set default.region ${AWS_REGION} --profile jenkins"
 
-                        echo "--- Pushing Backend Image ---"
-                        sh "docker push ${targetTag}"
+                        // Lấy lệnh đăng nhập ECR và thực thi
+                        def loginCmd = sh(script: "aws ecr get-login-password --region ${AWS_REGION} --profile jenkins | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}", returnStdout: true).trim()
+                        sh loginCmd
+
+                        echo "--- Building Backend Image for ECR ---"
+                        sh "docker build -t ${ecrTag} ."
+
+                        echo "--- Pushing Backend Image to ECR ---"
+                        sh "docker push ${ecrTag}"
                         
-                        sh "docker logout"
+                        sh "docker logout ${env.ECR_REGISTRY}"
                     }
                 }
             }
@@ -93,11 +131,12 @@ pipeline {
                             def valuesPath = "ecommerce-chart/values.yaml" // Thay đổi đường dẫn này nếu cần
                             
                             sh """
+                                sed -i '/backend:/,/repository:/ s|repository: .*|repository: ${env.ECR_REGISTRY}/${env.IMAGE_NAME}|' ${valuesPath}
                                 sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
                             """
 
                             sh "git add ${valuesPath}"
-                            sh "git commit -m 'Update backend image to ${env.IMAGE_TAG} [skip ci]' || echo 'No changes'"
+                            sh "git commit -m 'Update backend to ECR Image ${env.IMAGE_TAG} [skip ci]' || echo 'No changes'"
                             sh "git push https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO} HEAD:main"
                         }
                     }
