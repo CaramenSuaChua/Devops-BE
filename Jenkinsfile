@@ -140,7 +140,7 @@ pipeline {
                             
                             sh """
                                 sed -i '/backend:/,/repository:/ s|repository: .*|repository: ${env.ECR_REGISTRY}/${env.AWS_ECR_REPO_NAME}|' ${valuesPath}
-                                sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.AWS_ECR_REPO_NAME}|' ${valuesPath}
+                                sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
                             """
 
                             sh "git add ${valuesPath}"
