@@ -12,10 +12,10 @@ pipeline {
         // SCANCODE
         SONAR_SERVER_NAME = "SonarQube"
         // AWS_INFOR
-        AWS_ACCOUNT_ID = "aws-id" // ID Credential AWS trong Jenkins, chứa Account ID
+        AWS_ACCOUNT_ID = "573051981771"
         AWS_CREDS_ID   = "aws-creds"   // ID credentials AWS trong Jenkins, chứa Access Key và Secret Key
         AWS_REGION     = "ap-southeast-1"
-        ECR_REGISTRY   = "573051981771.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
     }
 
     stages {
