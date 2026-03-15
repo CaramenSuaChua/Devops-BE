@@ -95,21 +95,22 @@ pipeline {
                     def ecrTag = "${ecrRepo}:${env.IMAGE_TAG}"
 
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
-                        sh "aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile jenkins"
-                        sh "aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile jenkins"
-                        sh "aws configure set default.region ${AWS_REGION} --profile jenkins"
-
-                        // Lấy lệnh đăng nhập ECR và thực thi
-                        def loginCmd = sh(script: "aws ecr get-login-password --region ${AWS_REGION} --profile jenkins | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}", returnStdout: true).trim()
-                        sh loginCmd
-
-                        echo "--- Building Backend Image for ECR ---"
-                        sh "docker build -t ${ecrTag} ."
-
-                        echo "--- Pushing Backend Image to ECR ---"
-                        sh "docker push ${ecrTag}"
-                        
-                        sh "docker logout ${env.ECR_REGISTRY}"
+                        sh '''
+                            aws configure set aws_access_key_id $AWS_ACCESS_KEY --profile jenkins
+                            aws configure set aws_secret_access_key $AWS_SECRET_KEY --profile jenkins
+                            aws configure set default.region ''' + AWS_REGION + ''' --profile jenkins
+        
+                            # Đăng nhập ECR
+                            aws ecr get-login-password --region ''' + AWS_REGION + ''' --profile jenkins | docker login --username AWS --password-stdin ''' + env.ECR_REGISTRY + '''
+        
+                            echo "--- Building Backend Image ---"
+                            docker build -t ''' + ecrTag + ''' .
+        
+                            echo "--- Pushing Image to ECR ---"
+                            docker push ''' + ecrTag + '''
+                            
+                            docker logout ''' + env.ECR_REGISTRY + '''
+                        '''
                     }
                 }
             }
