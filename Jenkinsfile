@@ -127,32 +127,26 @@ pipeline {
             }
             steps {
                 script {
-            withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
-                sh '''
-                    # 1. Thiết lập môi trường AWS tạm thời
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
-                    export AWS_DEFAULT_REGION=''' + AWS_REGION + '''
-
-                    # 2. QUAN TRỌNG: Cập nhật file config để kubectl biết đường tới Cluster
-                    # Thay 'TEN_CLUSTER_CUA_BAN' bằng tên thật của EKS Cluster (ví dụ: de150-cluster)
-                    aws eks update-kubeconfig --region ''' + AWS_REGION + ''' --name TEN_CLUSTER_CUA_BAN
-
-                    # 3. Lấy Token ECR
-                    TOKEN=$(aws ecr get-login-password --region ''' + AWS_REGION + ''')
-
-                    # 4. Tạo Secret (Dùng --validate=false để tránh việc nó cố tải schema từ Jenkins)
-                    kubectl create secret docker-registry ecr-registry-helper \
-                        --docker-server=''' + ECR_REGISTRY + ''' \
-                        --docker-username=AWS \
-                        --docker-password=$TOKEN \
-                        --namespace ecommerce \
-                        --dry-run=client -o yaml | kubectl apply --validate=false -f -
-                    
-                    echo "--- ECR Secret updated successfully ---"
-                '''
-            }
-        }
+                    withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
+                        sh """
+                            export AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY
+                            export AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_KEY
+                            export AWS_DEFAULT_REGION=${env.AWS_REGION}
+        
+                            # Lấy Token từ ECR
+                            TOKEN=\$(aws ecr get-login-password --region ${env.AWS_REGION})
+        
+                            # Tạo secret. 
+                            # LƯU Ý: Phải đảm bảo file ~/.kube/config của user jenkins đã trỏ đúng về cụm EC2 của bạn
+                            kubectl create secret docker-registry ecr-registry-helper \
+                                --docker-server=${env.ECR_REGISTRY} \
+                                --docker-username=AWS \
+                                --docker-password=\$TOKEN \
+                                --namespace ecommerce \
+                                --dry-run=client -o yaml | kubectl apply -f -
+                        """
+                    }
+                }
             }
         }
 
