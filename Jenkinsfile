@@ -132,19 +132,19 @@ pipeline {
                             export AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY
                             export AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_KEY
                             export AWS_DEFAULT_REGION=${env.AWS_REGION}
-
-                            # Lấy Token tạm thời từ AWS (có hiệu lực 12h)
+        
                             TOKEN=\$(aws ecr get-login-password --region ${env.AWS_REGION})
-
-                            # Tạo hoặc cập nhật Secret trong namespace ecommerce
+        
+                            # Thêm --kubeconfig hoặc đảm bảo PATH của kubectl chính xác
+                            # Nếu bạn dùng EKS, hãy chạy lệnh update-kubeconfig trước
+                            aws eks update-kubeconfig --region ${env.AWS_REGION} --name <TEN_CLUSTER_CUA_BAN>
+        
                             kubectl create secret docker-registry ecr-registry-helper \
                                 --docker-server=${env.ECR_REGISTRY} \
                                 --docker-username=AWS \
                                 --docker-password=\$TOKEN \
                                 --namespace ecommerce \
-                                --dry-run=client -o yaml | kubectl apply -f -
-                            
-                            echo "--- ECR ImagePullSecret updated successfully ---"
+                                --dry-run=client -o yaml | kubectl apply --validate=false -f -
                         """
                     }
                 }
