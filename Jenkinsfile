@@ -31,6 +31,21 @@ pipeline {
             }
         }
 
+        stage('Security Scan (Trivy FS)') {
+            when { 
+                expression { env.action == 'opened' || env.action == 'synchronize' } 
+            }
+            steps {
+                script {
+                    echo "--- Đang quét bảo mật mã nguồn với Trivy (PR Opened) ---"
+                    // --severity HIGH,CRITICAL: Chỉ lọc lỗi nặng
+                    // --exit-code 1: Dừng pipeline nếu phát hiện lỗi
+                    // '.' : Quét toàn bộ thư mục code vừa checkout
+                    sh "trivy fs --severity HIGH,CRITICAL --exit-code 1 ."
+                }
+            }
+        }
+
         stage('Code Quality (SonarQube)') {
             when {
                 expression { env.action == 'opened' || env.action == 'synchronize' }
