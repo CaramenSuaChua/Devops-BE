@@ -84,8 +84,11 @@ pipeline {
         // }
 
         stage ("Build & Push to ECR") {
+            // when {
+            //     expression { env.action == 'closed'}
+            // }
             when {
-                expression { env.action == 'closed'}
+                expression { env.action == 'opened' || env.action == 'synchronize' }
             }
             steps {
                 script {
@@ -115,9 +118,45 @@ pipeline {
             }
         }
 
-        stage('Update GitOps (Backend Tag)') {
+        stage('Setup ECR Secret for K8s') {
+            // when {
+            //     expression { env.action == 'closed' }
+            // }
             when {
-                expression { env.action == 'closed'}
+                expression { env.action == 'opened' || env.action == 'synchronize' }
+            }
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
+                        sh """
+                            export AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY
+                            export AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_KEY
+                            export AWS_DEFAULT_REGION=${env.AWS_REGION}
+
+                            # Lấy Token tạm thời từ AWS (có hiệu lực 12h)
+                            TOKEN=\$(aws ecr get-login-password --region ${env.AWS_REGION})
+
+                            # Tạo hoặc cập nhật Secret trong namespace ecommerce
+                            kubectl create secret docker-registry ecr-registry-helper \
+                                --docker-server=${env.ECR_REGISTRY} \
+                                --docker-username=AWS \
+                                --docker-password=\$TOKEN \
+                                --namespace ecommerce \
+                                --dry-run=client -o yaml | kubectl apply -f -
+                            
+                            echo "--- ECR ImagePullSecret updated successfully ---"
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update GitOps (Backend Tag)') {
+            // when {
+            //     expression { env.action == 'closed'}
+            // }
+            when {
+                expression { env.action == 'opened' || env.action == 'synchronize' }
             }
             steps {
                 script {
