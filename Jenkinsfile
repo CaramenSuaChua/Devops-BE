@@ -127,29 +127,30 @@ pipeline {
             }
             steps {
                 script {
-                    // Lấy credentials AWS từ Jenkins
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
                         sh '''
+                            # 1. Thiết lập biến AWS tạm thời
                             export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
                             export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
                             export AWS_DEFAULT_REGION=''' + AWS_REGION + '''
         
-                            # 1. Lấy Token đăng nhập ECR
+                            # 2. Lấy Token từ ECR
                             TOKEN=$(aws ecr get-login-password --region ''' + AWS_REGION + ''')
         
-                            # 2. Xóa secret cũ nếu có (để tránh lỗi trùng lặp)
-                            kubectl delete secret ecr-registry-helper -n ecommerce --ignore-not-found=true
+                            # 3. Ép kubectl dùng file config chuẩn (tránh trỏ nhầm vào Jenkins)
+                            # Giả sử file config bạn để ở ~/.kube/config
+                            KUBECTL="kubectl --kubeconfig=$HOME/.kube/config"
         
-                            # 3. Tạo lại secret mới với Token vừa lấy
-                            # Thêm --validate=false để bỏ qua lỗi OpenAPI redirect về Jenkins
-                            kubectl create secret docker-registry ecr-registry-helper \
+                            # 4. Xóa và tạo lại Secret trong namespace ecommerce
+                            $KUBECTL delete secret ecr-registry-helper -n ecommerce --ignore-not-found=true
+                            
+                            $KUBECTL create secret docker-registry ecr-registry-helper \
                                 --docker-server=''' + ECR_REGISTRY + ''' \
                                 --docker-username=AWS \
                                 --docker-password=$TOKEN \
-                                --namespace ecommerce \
-                                --validate=false
+                                --namespace ecommerce
                             
-                            echo "--- ECR Secret updated for self-managed K8s ---"
+                            echo "--- Đã cập nhật xong Secret ecr-registry-helper cho K8s ---"
                         '''
                     }
                 }
