@@ -128,24 +128,23 @@ pipeline {
             steps {
                 script {
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
-                        sh """
-                            export AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY
-                            export AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_KEY
-                            export AWS_DEFAULT_REGION=${env.AWS_REGION}
-        
-                            TOKEN=\$(aws ecr get-login-password --region ${env.AWS_REGION})
-        
-                            # Thêm --kubeconfig hoặc đảm bảo PATH của kubectl chính xác
-                            # Nếu bạn dùng EKS, hãy chạy lệnh update-kubeconfig trước
-                            aws eks update-kubeconfig --region ${env.AWS_REGION} --name <TEN_CLUSTER_CUA_BAN>
-        
+                        // Sử dụng nháy đơn ''' để tránh lỗi Syntax Shell
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_SECRET_KEY
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
+                            export AWS_DEFAULT_REGION=''' + AWS_REGION + '''
+
+                            # Lấy token login ECR
+                            TOKEN=$(aws ecr get-login-password --region ''' + AWS_REGION + ''')
+
+                            # Tạo secret. Lưu ý thêm --validate=false để bỏ qua lỗi OpenAPI của Jenkins
                             kubectl create secret docker-registry ecr-registry-helper \
-                                --docker-server=${env.ECR_REGISTRY} \
+                                --docker-server=''' + ECR_REGISTRY + ''' \
                                 --docker-username=AWS \
-                                --docker-password=\$TOKEN \
+                                --docker-password=$TOKEN \
                                 --namespace ecommerce \
                                 --dry-run=client -o yaml | kubectl apply --validate=false -f -
-                        """
+                        '''
                     }
                 }
             }
