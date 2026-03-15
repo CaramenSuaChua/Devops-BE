@@ -12,6 +12,7 @@ pipeline {
         // SCANCODE
         SONAR_SERVER_NAME = "SonarQube"
         // AWS_INFOR
+        AWS_ECR_REPO_NAME = "de150/ecommerce-backend"
         AWS_ACCOUNT_ID = "573051981771"
         AWS_CREDS_ID   = "aws-creds"   // ID credentials AWS trong Jenkins, chứa Access Key và Secret Key
         AWS_REGION     = "ap-southeast-1"
@@ -91,7 +92,7 @@ pipeline {
             }
             steps {
                 script {
-                    def ecrRepo = "${env.ECR_REGISTRY}/${env.IMAGE_NAME}"
+                    def ecrRepo = "${env.ECR_REGISTRY}/${env.AWS_ECR_REPO_NAME}"
                     def ecrTag = "${ecrRepo}:${env.IMAGE_TAG}"
 
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
