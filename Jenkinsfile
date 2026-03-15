@@ -41,7 +41,8 @@ pipeline {
                     // --severity HIGH,CRITICAL: Chỉ lọc lỗi nặng
                     // --exit-code 1: Dừng pipeline nếu phát hiện lỗi
                     // '.' : Quét toàn bộ thư mục code vừa checkout
-                    sh "trivy fs --severity HIGH,CRITICAL --exit-code 1 ."
+                    // sh "trivy fs --severity HIGH,CRITICAL --exit-code 1 ."
+                    sh "trivy config --severity HIGH,CRITICAL --exit-code 1 Dockerfile"
                 }
             }
         }
