@@ -21,30 +21,26 @@ FROM eclipse-temurin:17-jre-alpine
 
 ARG BUILD_DATE
 
-# 1. Tạo Group và User mới (non-root)
-# -D: không tạo password, -G: gán vào group
-RUN addgroup -S springgroup && adduser -S springuser -G springgroup
-
-# 2. Thiết lập thời gian và thông tin build
-RUN echo "Build Time: $BUILD_DATE" > /build_info.txt \
-    && apk add --no-cache tzdata \
-    && cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime \
-    && echo "Asia/Ho_Chi_Minh" > /etc/timezone
+# Gộp tất cả lệnh RUN chuẩn bị môi trường vào làm 1 để giảm Layer
+RUN addgroup -S springgroup && adduser -S springuser -G springgroup && \
+    echo "Build Time: $BUILD_DATE" > /build_info.txt && \
+    apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime && \
+    echo "Asia/Ho_Chi_Minh" > /etc/timezone
 
 # Thiết lập thư mục chạy ứng dụng
 WORKDIR /run
 
-# 3. Copy file JAR và tạo thư mục config
+# Copy file JAR và cấp quyền luôn trong lúc copy hoặc bằng lệnh RUN gộp
 COPY --from=build /app/target/*.jar app.jar
-RUN mkdir -p /run/config
 
-# 4. QUAN TRỌNG: Cấp quyền sở hữu thư mục /run cho springuser
-RUN chown -R springuser:springgroup /run
+# Tạo thư mục config và phân quyền cho user non-root
+RUN mkdir -p /run/config && \
+    chown -R springuser:springgroup /run
 
-# 5. Chuyển sang sử dụng User thường thay vì root
+# Chuyển sang user thường để pass Trivy
 USER springuser
 
 EXPOSE 8080
 
-# Chạy ứng dụng Java
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=optional:classpath:/,optional:file:/run/src/main/resources/application.properties"]
