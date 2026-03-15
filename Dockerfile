@@ -48,6 +48,10 @@ RUN mvn package -DskipTests=true
 ## STAGE 2: Run stage ## 
 FROM eclipse-temurin:17-jre-alpine
 
+ARG BUILD_DATE
+# Việc ghi giá trị thay đổi này vào một file sẽ làm thay đổi Digest của Image
+RUN echo "Build Time: $BUILD_DATE" > /build_info.txt
+
 # Cài đặt múi giờ Việt Nam (Asia/Ho_Chi_Minh) cho container
 RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime \
