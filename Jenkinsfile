@@ -130,7 +130,7 @@ pipeline {
                     withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", secretKeyVariable: 'AWS_SECRET_KEY', accessKeyVariable: 'AWS_ACCESS_KEY')]) {
                         // Sử dụng nháy đơn ''' để tránh lỗi Syntax Shell
                         sh '''
-                            export AWS_ACCESS_KEY_ID=$AWS_SECRET_KEY
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
                             export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
                             export AWS_DEFAULT_REGION=''' + AWS_REGION + '''
 
