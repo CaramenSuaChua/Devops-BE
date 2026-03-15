@@ -83,8 +83,11 @@ pipeline {
         // }
 
         stage ("Build & Push to ECR") {
+            // when {
+            //     expression { env.action == 'closed'}
+            // }
             when {
-                expression { env.action == 'closed'}
+                expression { env.action == 'opened' || env.action == 'synchronize' }
             }
             steps {
                 script {
@@ -119,7 +122,7 @@ pipeline {
             steps {
                 script {
                     sh "rm -rf ecommerce-gitops"
-                    withCredentials([usernamePassword(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
+                    withCredentials([aws(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
                         sh "git clone https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO}"
                         
                         dir('ecommerce-gitops') {
