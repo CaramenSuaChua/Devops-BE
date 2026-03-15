@@ -118,13 +118,16 @@ pipeline {
         }
 
         stage('Update GitOps (Backend Tag)') {
+            // when {
+            //     expression { env.action == 'closed'}
+            // }
             when {
-                expression { env.action == 'closed'}
+                expression { env.action == 'opened' || env.action == 'synchronize' }
             }
             steps {
                 script {
                     sh "rm -rf ecommerce-gitops"
-                    withCredentials([aws(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
+                    withCredentials([usernamePassword(credentialsId: "${env.GITOPS_CREDS}", passwordVariable: 'GIT_PWD', usernameVariable: 'GIT_USER')]) {
                         sh "git clone https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO}"
                         
                         dir('ecommerce-gitops') {
@@ -136,12 +139,12 @@ pipeline {
                             def valuesPath = "ecommerce-chart/values.yaml" // Thay đổi đường dẫn này nếu cần
                             
                             sh """
-                                sed -i '/backend:/,/repository:/ s|repository: .*|repository: ${env.ECR_REGISTRY}/${env.IMAGE_NAME}|' ${valuesPath}
-                                sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.IMAGE_TAG}|' ${valuesPath}
+                                sed -i '/backend:/,/repository:/ s|repository: .*|repository: ${env.ECR_REGISTRY}/${env.AWS_ECR_REPO_NAME}|' ${valuesPath}
+                                sed -i '/backend:/,/tag:/ s|tag: .*|tag: ${env.AWS_ECR_REPO_NAME}|' ${valuesPath}
                             """
 
                             sh "git add ${valuesPath}"
-                            sh "git commit -m 'Update backend to ECR Image ${env.IMAGE_TAG} [skip ci]' || echo 'No changes'"
+                            sh "git commit -m 'Update backend to ECR Image ${env.AWS_ECR_REPO_NAME} [skip ci]' || echo 'No changes'"
                             sh "git push https://${GIT_USER}:${GIT_PWD}@${env.GITOPS_REPO} HEAD:main"
                         }
                     }
