@@ -30,6 +30,7 @@
 
 
 
+
 ## STAGE 1: Build stage ##
 FROM maven:3.8.3-openjdk-17-slim AS build
 
@@ -46,6 +47,10 @@ RUN mvn package -DskipTests=true
 
 ## STAGE 2: Run stage ## 
 FROM eclipse-temurin:17-jre-alpine
+
+ARG BUILD_DATE
+# Việc ghi giá trị thay đổi này vào một file sẽ làm thay đổi Digest của Image
+RUN echo "Build Time: $BUILD_DATE" > /build_info.txt
 
 # Cài đặt múi giờ Việt Nam (Asia/Ho_Chi_Minh) cho container
 RUN apk add --no-cache tzdata \
