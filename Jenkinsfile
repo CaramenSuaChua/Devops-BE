@@ -94,7 +94,7 @@ pipeline {
                     def ecrRepo = "${env.ECR_REGISTRY}/${env.IMAGE_NAME}"
                     def ecrTag = "${ecrRepo}:${env.IMAGE_TAG}"
 
-                    withCredentials([usernamePassword(credentialsId: "${env.AWS_CREDS_ID}", passwordVariable: 'AWS_SECRET_KEY', usernameVariable: 'AWS_ACCESS_KEY')]) {
+                    withCredentials([aws(credentialsId: "${env.AWS_CREDS_ID}", passwordVariable: 'AWS_SECRET_KEY', usernameVariable: 'AWS_ACCESS_KEY')]) {
                         sh "aws configure set aws_access_key_id ${AWS_ACCESS_KEY} --profile jenkins"
                         sh "aws configure set aws_secret_access_key ${AWS_SECRET_KEY} --profile jenkins"
                         sh "aws configure set default.region ${AWS_REGION} --profile jenkins"
