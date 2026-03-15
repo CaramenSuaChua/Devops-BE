@@ -84,11 +84,8 @@ pipeline {
         // }
 
         stage ("Build & Push to ECR") {
-            // when {
-            //     expression { env.action == 'closed'}
-            // }
             when {
-                expression { env.action == 'opened' || env.action == 'synchronize' }
+                expression { env.action == 'closed'}
             }
             steps {
                 script {
@@ -118,11 +115,8 @@ pipeline {
         }
 
         stage('Update GitOps (Backend Tag)') {
-            // when {
-            //     expression { env.action == 'closed'}
-            // }
             when {
-                expression { env.action == 'opened' || env.action == 'synchronize' }
+                expression { env.action == 'closed'}
             }
             steps {
                 script {
