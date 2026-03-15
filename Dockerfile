@@ -52,7 +52,12 @@ RUN mvn package -DskipTests=true
 FROM eclipse-temurin:17-jre-alpine
 
 ARG BUILD_DATE
-# Việc ghi giá trị thay đổi này vào một file sẽ làm thay đổi Digest của Image
+
+# 1. Tạo Group và User mới (non-root)
+# -D: không tạo password, -G: gán vào group
+RUN addgroup -S springgroup && adduser -S springuser -G springgroup
+
+# 2. Thiết lập thời gian và thông tin build
 RUN echo "Build Time: $BUILD_DATE" > /build_info.txt \
     && apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime \
@@ -61,15 +66,17 @@ RUN echo "Build Time: $BUILD_DATE" > /build_info.txt \
 # Thiết lập thư mục chạy ứng dụng
 WORKDIR /run
 
-# Copy file JAR từ stage build sang stage run
-# Dùng wildcard (*) để tự động nhận diện file jar bất kể version SNAPSHOT
+# 3. Copy file JAR và tạo thư mục config
 COPY --from=build /app/target/*.jar app.jar
-
-# Nếu bạn muốn truyền file config từ bên ngoài vào, hãy tạo thư mục chứa
 RUN mkdir -p /run/config
+
+# 4. QUAN TRỌNG: Cấp quyền sở hữu thư mục /run cho springuser
+RUN chown -R springuser:springgroup /run
+
+# 5. Chuyển sang sử dụng User thường thay vì root
+USER springuser
 
 EXPOSE 8080
 
 # Chạy ứng dụng Java
-# Tham số --spring.config.location cho phép bạn ghi đè cấu hình từ file bên ngoài nếu cần
 ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=optional:classpath:/,optional:file:/run/src/main/resources/application.properties"]
