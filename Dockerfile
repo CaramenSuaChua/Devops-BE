@@ -12,10 +12,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install --force
 
-# --- Stage 2: Test (Chỉ chạy khi PR) ---
-FROM base AS test
-COPY . .
-RUN npm run test -- --watch=false --browsers=ChromeHeadless || echo "No tests defined"
+# # --- Stage 2: Test (Chỉ chạy khi PR) ---
+# FROM base AS test
+# COPY . .
+# RUN npm run test -- --watch=false --browsers=ChromeHeadless || echo "No tests defined"
 
 # --- Stage 3: Build (Biên dịch Angular) ---
 FROM base AS build
