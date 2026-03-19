@@ -1,21 +1,12 @@
-# --- Stage 1: Base (Cài đặt thư viện - Đổi từ Maven sang Node) ---
 FROM node:18-alpine AS base
 WORKDIR /app
-
-# Chỉ copy file config để tận dụng Docker Cache cho node_modules
 COPY package.json package-lock.json ./
 RUN npm install --force
 
-# --- Stage 2: Test (Chỉ chạy khi PR) ---
-# FROM base AS stage_test
-# COPY . .
-# # Lưu ý: Chạy test Angular cần trình duyệt, nếu container không có Chrome sẽ lỗi.
-# # Tôi thêm || true để tránh crash pipeline nếu bạn chưa cài Chrome trong image
-# RUN npm run test -- --watch=false --browsers=ChromeHeadless || echo "No tests defined"
-
-# --- Stage 3: Build (Biên dịch Angular - Đổi tên từ build thành stage_build) ---
+# --- Stage 2: Build (Dùng lệnh COPY an toàn hơn) ---
 FROM base AS stage_build
-COPY . .
+# Nhờ .dockerignore, lệnh này sẽ không copy node_modules hay .git
+COPY . . 
 RUN npm run build
 
 # --- Stage 4: Production (Nginx bảo mật) ---
