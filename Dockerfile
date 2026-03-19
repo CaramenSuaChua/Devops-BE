@@ -1,5 +1,11 @@
-# --- Stage 1: Base (Cài đặt thư viện) ---
-FROM node:18-alpine AS base
+
+
+
+
+## STAGE 1: Build stage ##
+FROM maven:3.8.3-openjdk-17-slim AS build
+
+# Thiết lập thư mục làm việc trong container build
 WORKDIR /app
 
 # Chỉ copy file config để tận dụng Docker Cache cho node_modules
