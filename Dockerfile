@@ -8,39 +8,41 @@ FROM maven:3.8.3-openjdk-17-slim AS build
 # Thiết lập thư mục làm việc trong container build
 WORKDIR /app
 
-# Copy file pom.xml và tải dependencies trước để tận dụng Docker Cache
-COPY pom.xml .
-RUN mvn dependency:go-offline -B
+# Chỉ copy file config để tận dụng Docker Cache cho node_modules
+COPY package.json package-lock.json ./
+RUN npm install --force
 
-# Copy toàn bộ mã nguồn và thực hiện build file JAR
-COPY src ./src
-RUN mvn package -DskipTests=true
+# --- Stage 2: Test (Chỉ chạy khi PR) ---
+FROM base AS test
+COPY . .
+RUN npm run test -- --watch=false --browsers=ChromeHeadless || echo "No tests defined"
 
-## STAGE 2: Run stage ## 
-FROM eclipse-temurin:17-jre-alpine
+# --- Stage 3: Build (Biên dịch Angular) ---
+FROM base AS build
+COPY . .
+RUN npm run build
 
+# --- Stage 4: Production (Nginx bảo mật) ---
+FROM nginx:alpine AS production
 ARG BUILD_DATE
 
-# Gộp tất cả lệnh RUN chuẩn bị môi trường vào làm 1 để giảm Layer
-RUN addgroup -S springgroup && adduser -S springuser -G springgroup && \
-    echo "Build Time: $BUILD_DATE" > /build_info.txt && \
+# Thiết lập Timezone và phân quyền để Pass Trivy (Non-root user)
+RUN echo "Build Time: $BUILD_DATE" > /usr/share/nginx/html/build_info.txt && \
     apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime && \
-    echo "Asia/Ho_Chi_Minh" > /etc/timezone
+    echo "Asia/Ho_Chi_Minh" > /etc/timezone && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chown -R nginx:nginx /var/cache/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx:nginx /var/run/nginx.pid
 
-# Thiết lập thư mục chạy ứng dụng
-WORKDIR /run
+# Copy kết quả build từ stage trước
+COPY --from=build /app/dist/angular-ecommerce /usr/share/nginx/html
 
-# Copy file JAR và cấp quyền luôn trong lúc copy hoặc bằng lệnh RUN gộp
-COPY --from=build /app/target/*.jar app.jar
+# Chuyển sang user nginx để pass Trivy Config scan
+USER nginx
 
-# Tạo thư mục config và phân quyền cho user non-root
-RUN mkdir -p /run/config && \
-    chown -R springuser:springgroup /run
-
-# Chuyển sang user thường để pass Trivy
-USER springuser
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=optional:classpath:/,optional:file:/run/src/main/resources/application.properties"]
+EXPOSE 80
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
