@@ -47,33 +47,33 @@ pipeline {
             }
         }
 
-        // stage('Code Quality (SonarQube)') {
-        //     // when {
-        //     //     expression { env.action == 'opened' || env.action == 'synchronize' }
-        //     // }
-        //     steps {
-        //         script {
-        //             // Bước này để Jenkins tự động tải và sử dụng tool sonar-scanner
-        //             def scannerHome = tool 'sonar-scanner'
+        stage('Code Quality (SonarQube)') {
+            // when {
+            //     expression { env.action == 'opened' || env.action == 'synchronize' }
+            // }
+            steps {
+                script {
+                    // Bước này để Jenkins tự động tải và sử dụng tool sonar-scanner
+                    def scannerHome = tool 'sonar-scanner'
                     
-        //             // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
-        //             withSonarQubeEnv('SonarQube') {
-        //                 sh "${scannerHome}/bin/sonar-scanner \
-        //                     -Dsonar.projectKey=Ecommerce-Backend \
-        //                     -Dsonar.sources=. \
-        //                     -Dsonar.host.url=http://18.139.185.108:9000 \
-        //                     -Dsonar.java.binaries=." 
-        //             }
+                    // PHẢI CÓ TÊN 'SonarQube' TRONG NGOẶC
+                    withSonarQubeEnv('SonarQube') {
+                        sh "${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=Ecommerce-Backend \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://18.139.185.108:9000 \
+                            -Dsonar.java.binaries=." 
+                    }
                     
-        //             timeout(time: 10, unit: 'MINUTES') {
-        //                 def qg = waitForQualityGate()
-        //                 if (qg.status != 'OK') {
-        //                     error "Pipeline fail do Quality Gate của SonarQube báo lỗi: ${qg.status}"
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+                    timeout(time: 10, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline fail do Quality Gate của SonarQube báo lỗi: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
 
         // stage('Build & Push Backend Image') {
         //     when {
