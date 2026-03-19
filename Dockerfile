@@ -5,7 +5,6 @@ RUN npm install --force
 
 # --- Stage 2: Build (Dùng lệnh COPY an toàn hơn) ---
 FROM base AS stage_build
-# Nhờ .dockerignore, lệnh này sẽ không copy node_modules hay .git
 COPY . . 
 RUN npm run build
 
