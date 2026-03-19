@@ -1,6 +1,6 @@
-FROM node:18-alpine AS base
+FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY . .
 RUN npm install --force
 
 # --- Stage 2: Build (Dùng lệnh COPY an toàn hơn) ---
