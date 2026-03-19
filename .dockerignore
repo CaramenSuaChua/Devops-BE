@@ -1,11 +1,9 @@
-# .dockerignore
 node_modules
 .git
-.gitignore
-dist
-.angular
+.env
+*.pem
+credentials.json
 .jenkins
-*.md
-docker-compose.yml
 Dockerfile
 Jenkinsfile
+dist
