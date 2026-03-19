@@ -1,24 +1,20 @@
-
-
-
-
-## STAGE 1: Build stage ##
-FROM maven:3.8.3-openjdk-17-slim AS build
-
-# Thiết lập thư mục làm việc trong container build
+# --- Stage 1: Base (Cài đặt thư viện - Đổi từ Maven sang Node) ---
+FROM node:18-alpine AS base
 WORKDIR /app
 
 # Chỉ copy file config để tận dụng Docker Cache cho node_modules
 COPY package.json package-lock.json ./
 RUN npm install --force
 
-# # --- Stage 2: Test (Chỉ chạy khi PR) ---
-# FROM base AS test
+# --- Stage 2: Test (Chỉ chạy khi PR) ---
+# FROM base AS stage_test
 # COPY . .
+# # Lưu ý: Chạy test Angular cần trình duyệt, nếu container không có Chrome sẽ lỗi.
+# # Tôi thêm || true để tránh crash pipeline nếu bạn chưa cài Chrome trong image
 # RUN npm run test -- --watch=false --browsers=ChromeHeadless || echo "No tests defined"
 
-# --- Stage 3: Build (Biên dịch Angular) ---
-FROM base AS build
+# --- Stage 3: Build (Biên dịch Angular - Đổi tên từ build thành stage_build) ---
+FROM base AS stage_build
 COPY . .
 RUN npm run build
 
@@ -38,8 +34,8 @@ RUN echo "Build Time: $BUILD_DATE" > /usr/share/nginx/html/build_info.txt && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 
-# Copy kết quả build từ stage trước
-COPY --from=build /app/dist/angular-ecommerce /usr/share/nginx/html
+# Copy kết quả build từ stage_build (Phải khớp tên với AS ở trên)
+COPY --from=stage_build /app/dist/angular-ecommerce /usr/share/nginx/html
 
 # Chuyển sang user nginx để pass Trivy Config scan
 USER nginx
