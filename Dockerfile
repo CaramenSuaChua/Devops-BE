@@ -24,10 +24,9 @@ RUN echo "Build Time: $BUILD_DATE" > /usr/share/nginx/html/build_info.txt && \
     touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid
 
-# Copy kết quả build từ stage_build (Phải khớp tên với AS ở trên)
+# Copy kết quả build từ stage_build
 COPY --from=stage_build /app/dist/angular-ecommerce /usr/share/nginx/html
 
-# Chuyển sang user nginx để pass Trivy Config scan
 USER nginx
 
 EXPOSE 80
