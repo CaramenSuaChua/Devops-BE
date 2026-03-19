@@ -1,33 +1,38 @@
+# --- Stage 1: Build Stage (Dùng Maven để đóng gói file JAR) ---
 FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /app
-COPY . .
-RUN npm install --force
 
-# --- Stage 2: Build (Dùng lệnh COPY an toàn hơn) ---
-FROM base AS stage_build
-COPY . . 
-RUN npm run build
+# Thay vì COPY . ., liệt kê cụ thể để tránh lỗi bảo mật DS002 của Trivy
+COPY pom.xml .
+COPY src/ ./src/
 
-# --- Stage 3: Production (Nginx bảo mật) ---
-FROM nginx:alpine AS production
+# Chạy lệnh build (Install) và bỏ qua Test để nhanh hơn
+RUN mvn clean install -DskipTests
+
+# --- Stage 2: Run Stage (Image thực thi siêu nhẹ) ---
+FROM openjdk:17-alpine AS production
 ARG BUILD_DATE
 
-# Thiết lập Timezone và phân quyền để Pass Trivy (Non-root user)
-RUN echo "Build Time: $BUILD_DATE" > /usr/share/nginx/html/build_info.txt && \
-    apk add --no-cache tzdata && \
+# 1. Thiết lập Timezone Hồ Chí Minh và tạo User Non-root để bảo mật
+RUN apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime && \
     echo "Asia/Ho_Chi_Minh" > /etc/timezone && \
-    chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d && \
-    touch /var/run/nginx.pid && \
-    chown -R nginx:nginx /var/run/nginx.pid
+    # Tạo user 'spring' để chạy ứng dụng (Pass Trivy Scan)
+    addgroup -S spring && adduser -S spring -G spring && \
+    # Ghi lại thông tin build
+    echo "Build Time: $BUILD_DATE" > /app/build_info.txt
 
-# Copy kết quả build từ stage_build
-COPY --from=stage_build /app/dist/angular-ecommerce /usr/share/nginx/html
+WORKDIR /app
 
-USER nginx
+# 2. Copy file JAR từ stage build sang (Đảm bảo đường dẫn nguồn /app/target/...)
+# Chúng ta đổi tên file đích thành app.jar cho ngắn gọn và bảo mật
+COPY --from=build /app/target/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar ./app.jar
 
-EXPOSE 80
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+# 3. Phân quyền cho user thường
+RUN chown -R spring:spring /app
+USER spring
+
+EXPOSE 8080
+
+# Sử dụng mảng [] cho ENTRYPOINT để quản lý tín hiệu tốt hơn
+ENTRYPOINT ["java", "-jar", "app.jar"]
