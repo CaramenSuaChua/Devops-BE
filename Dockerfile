@@ -8,7 +8,7 @@ FROM base AS stage_build
 COPY . . 
 RUN npm run build
 
-# --- Stage 4: Production (Nginx bảo mật) ---
+# --- Stage 3: Production (Nginx bảo mật) ---
 FROM nginx:alpine AS production
 ARG BUILD_DATE
 
