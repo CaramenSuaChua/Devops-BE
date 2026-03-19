@@ -1,9 +1,8 @@
 node_modules
-.git
-.env
-*.pem
-credentials.json
-.jenkins
-Dockerfile
-Jenkinsfile
+npm-debug.log
 dist
+.git
+.gitignore
+.env
+Docker-compose.yml
+Dockerfile
