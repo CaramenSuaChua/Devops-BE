@@ -22,7 +22,6 @@ WORKDIR /app
 RUN echo "Build Time: $BUILD_DATE" > build_info.txt
 
 # Copy file JAR từ stage build
-# Lưu ý: /app/target/... là đường dẫn mặc định của Maven
 COPY --from=build /app/target/spring-boot-ecommerce-0.0.1-SNAPSHOT.jar ./app.jar
 
 # Phân quyền và chuyển user
